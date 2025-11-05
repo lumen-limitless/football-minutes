@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>NFL Game Clock Calculator - Demo</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+      body {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      }
+    </style>
+  </head>
+  <body class="min-h-screen p-8">
+    <div class="max-w-4xl mx-auto">
+      <div class="bg-white rounded-2xl shadow-2xl p-8 mb-6">
+        <h1 class="text-4xl font-bold text-gray-800 mb-2">
+          🏈 NFL Game Clock Calculator
+        </h1>
+        <p class="text-gray-600 mb-8">
+          Answer: "2:00 game time = ? real minutes"
+        </p>
+
+        <!-- Input Section -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+          <div>
+            <label class="block text-sm font-semibold text-gray-700 mb-2"
+              >Quarter</label
+            >
+            <div class="flex gap-2">
+              <button
+                onclick="setQuarter(1)"
+                id="q1"
+                class="quarter-btn flex-1 py-3 px-4 rounded-lg font-bold transition-all"
+              >
+                Q1
+              </button>
+              <button
+                onclick="setQuarter(2)"
+                id="q2"
+                class="quarter-btn flex-1 py-3 px-4 rounded-lg font-bold transition-all"
+              >
+                Q2
+              </button>
+              <button
+                onclick="setQuarter(3)"
+                id="q3"
+                class="quarter-btn flex-1 py-3 px-4 rounded-lg font-bold transition-all"
+              >
+                Q3
+              </button>
+              <button
+                onclick="setQuarter(4)"
+                id="q4"
+                class="quarter-btn flex-1 py-3 px-4 rounded-lg font-bold transition-all bg-blue-600 text-white"
+              >
+                Q4
+              </button>
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-sm font-semibold text-gray-700 mb-2"
+              >Game Time Remaining</label
+            >
+            <div class="flex gap-3 items-center">
+              <input
+                type="number"
+                id="minutes"
+                value="2"
+                min="0"
+                max="15"
+                class="flex-1 px-4 py-3 border-2 border-gray-300 rounded-lg text-xl font-bold text-center focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+                oninput="calculate()"
+              />
+              <span class="text-3xl font-bold text-gray-400">:</span>
+              <input
+                type="number"
+                id="seconds"
+                value="0"
+                min="0"
+                max="59"
+                class="flex-1 px-4 py-3 border-2 border-gray-300 rounded-lg text-xl font-bold text-center focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+                oninput="calculate()"
+              />
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-sm font-semibold text-gray-700 mb-2"
+              >Score Situation</label
+            >
+            <select
+              id="scoreDiff"
+              onchange="calculate()"
+              class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg font-medium focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+            >
+              <option value="0">Tied Game</option>
+              <option value="-3" selected>Down by 3 (Need FG)</option>
+              <option value="-7">Down by 7 (Need TD)</option>
+              <option value="-10">Down by 10 (Two Scores)</option>
+              <option value="-14">Down by 14 (Two TDs)</option>
+              <option value="3">Leading by 3</option>
+              <option value="7">Leading by 7</option>
+              <option value="14">Leading by 14</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="block text-sm font-semibold text-gray-700 mb-2"
+              >Timeouts Remaining</label
+            >
+            <div class="flex gap-2">
+              <button
+                onclick="setTimeouts(0)"
+                id="to0"
+                class="timeout-btn flex-1 py-3 px-4 rounded-lg font-bold transition-all"
+              >
+                0
+              </button>
+              <button
+                onclick="setTimeouts(1)"
+                id="to1"
+                class="timeout-btn flex-1 py-3 px-4 rounded-lg font-bold transition-all"
+              >
+                1
+              </button>
+              <button
+                onclick="setTimeouts(2)"
+                id="to2"
+                class="timeout-btn flex-1 py-3 px-4 rounded-lg font-bold transition-all bg-green-600 text-white"
+              >
+                2
+              </button>
+              <button
+                onclick="setTimeouts(3)"
+                id="to3"
+                class="timeout-btn flex-1 py-3 px-4 rounded-lg font-bold transition-all"
+              >
+                3
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Result Display -->
+        <div
+          id="result"
+          class="bg-gradient-to-r from-blue-500 to-purple-600 rounded-xl p-8 text-white text-center"
+        >
+          <p class="text-lg mb-2">
+            Game Time: <span id="displayGameTime" class="font-bold">2:00</span>
+          </p>
+          <p class="text-6xl font-black mb-3" id="resultTime">6.5</p>
+          <p class="text-2xl font-semibold mb-4">Real Minutes</p>
+          <p class="text-sm opacity-90">
+            Range: <span id="rangeTime">4.5 - 8.4</span> minutes
+          </p>
+          <p class="text-sm opacity-75 mt-2">
+            Confidence: <span id="confidence">65%</span>
+          </p>
+        </div>
+
+        <!-- Breakdown -->
+        <div class="mt-6 grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div
+            class="bg-gray-50 rounded-lg p-4 text-center border-2 border-gray-200"
+          >
+            <p class="text-xs text-gray-500 mb-1">Expected Plays</p>
+            <p class="text-2xl font-bold text-gray-800" id="plays">6</p>
+          </div>
+          <div
+            class="bg-gray-50 rounded-lg p-4 text-center border-2 border-gray-200"
+          >
+            <p class="text-xs text-gray-500 mb-1">Clock Stops</p>
+            <p class="text-2xl font-bold text-gray-800" id="stoppages">3</p>
+          </div>
+          <div
+            class="bg-gray-50 rounded-lg p-4 text-center border-2 border-gray-200"
+          >
+            <p class="text-xs text-gray-500 mb-1">Commercials</p>
+            <p class="text-2xl font-bold text-gray-800" id="commercials">0</p>
+          </div>
+          <div
+            class="bg-gray-50 rounded-lg p-4 text-center border-2 border-gray-200"
+          >
+            <p class="text-xs text-gray-500 mb-1">2-Min Warning</p>
+            <p class="text-2xl font-bold text-gray-800" id="warning">Yes</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Quick Reference Table -->
+      <div class="bg-white rounded-2xl shadow-2xl p-8">
+        <h2 class="text-2xl font-bold text-gray-800 mb-4">
+          📊 Quick Reference Guide
+        </h2>
+        <div class="overflow-x-auto">
+          <table class="w-full text-sm">
+            <thead>
+              <tr class="border-b-2 border-gray-300">
+                <th class="text-left py-3 px-4 font-bold text-gray-700">
+                  Game Time
+                </th>
+                <th class="text-left py-3 px-4 font-bold text-gray-700">
+                  Normal Pace
+                </th>
+                <th class="text-left py-3 px-4 font-bold text-gray-700">
+                  Close Game
+                </th>
+                <th class="text-left py-3 px-4 font-bold text-gray-700">
+                  Blowout
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr class="border-b border-gray-200 hover:bg-gray-50">
+                <td class="py-3 px-4 font-semibold">15:00</td>
+                <td class="py-3 px-4">~35 minutes</td>
+                <td class="py-3 px-4">~38 minutes</td>
+                <td class="py-3 px-4">~30 minutes</td>
+              </tr>
+              <tr class="border-b border-gray-200 hover:bg-gray-50">
+                <td class="py-3 px-4 font-semibold">10:00</td>
+                <td class="py-3 px-4">~22 minutes</td>
+                <td class="py-3 px-4">~25 minutes</td>
+                <td class="py-3 px-4">~18 minutes</td>
+              </tr>
+              <tr class="border-b border-gray-200 hover:bg-gray-50">
+                <td class="py-3 px-4 font-semibold">5:00</td>
+                <td class="py-3 px-4">~10 minutes</td>
+                <td class="py-3 px-4">~13 minutes</td>
+                <td class="py-3 px-4">~8 minutes</td>
+              </tr>
+              <tr class="border-b border-gray-200 hover:bg-blue-50 bg-blue-50">
+                <td class="py-3 px-4 font-bold text-blue-600">2:00</td>
+                <td class="py-3 px-4 font-semibold text-blue-600">
+                  ~4 minutes
+                </td>
+                <td class="py-3 px-4 font-semibold text-blue-600">
+                  ~7 minutes
+                </td>
+                <td class="py-3 px-4 font-semibold text-blue-600">
+                  ~3 minutes
+                </td>
+              </tr>
+              <tr class="hover:bg-gray-50">
+                <td class="py-3 px-4 font-semibold">1:00</td>
+                <td class="py-3 px-4">~2 minutes</td>
+                <td class="py-3 px-4">~4 minutes</td>
+                <td class="py-3 px-4">~1.5 minutes</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <p class="text-center text-white mt-6 text-sm opacity-75">
+        Interactive demo of the NFL Game Clock Calculator algorithm
+      </p>
+    </div>
+
+    <script>
+      let currentQuarter = 4;
+      let currentTimeouts = 2;
+
+      function setQuarter(q) {
+        currentQuarter = q;
+        document.querySelectorAll('.quarter-btn').forEach((btn) => {
+          btn.className =
+            'quarter-btn flex-1 py-3 px-4 rounded-lg font-bold transition-all bg-gray-200 text-gray-700 hover:bg-gray-300';
+        });
+        document.getElementById('q' + q).className =
+          'quarter-btn flex-1 py-3 px-4 rounded-lg font-bold transition-all bg-blue-600 text-white';
+        calculate();
+      }
+
+      function setTimeouts(num) {
+        currentTimeouts = num;
+        document.querySelectorAll('.timeout-btn').forEach((btn) => {
+          btn.className =
+            'timeout-btn flex-1 py-3 px-4 rounded-lg font-bold transition-all bg-gray-200 text-gray-700 hover:bg-gray-300';
+        });
+        document.getElementById('to' + num).className =
+          'timeout-btn flex-1 py-3 px-4 rounded-lg font-bold transition-all bg-green-600 text-white';
+        calculate();
+      }
+
+      function calculate() {
+        const minutes = parseInt(document.getElementById('minutes').value) || 0;
+        const seconds = parseInt(document.getElementById('seconds').value) || 0;
+        const scoreDiff =
+          parseInt(document.getElementById('scoreDiff').value) || 0;
+        const timeRemaining = minutes * 60 + seconds;
+
+        // Display game time
+        document.getElementById(
+          'displayGameTime'
+        ).textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+
+        // Simplified calculation (mimics the algorithm logic)
+        let realMinutes = calculateRealTime(
+          timeRemaining,
+          currentQuarter,
+          scoreDiff,
+          currentTimeouts
+        );
+
+        // Display results
+        document.getElementById('resultTime').textContent =
+          realMinutes.toFixed(1);
+        document.getElementById('rangeTime').textContent = `${(
+          realMinutes * 0.7
+        ).toFixed(1)} - ${(realMinutes * 1.3).toFixed(1)}`;
+
+        // Calculate breakdown
+        const expectedPlays = Math.ceil(
+          timeRemaining / (scoreDiff < -7 ? 15 : scoreDiff > 7 ? 35 : 25)
+        );
+        const stoppages = Math.floor(
+          expectedPlays * (scoreDiff < -3 ? 0.35 : scoreDiff > 7 ? 0.15 : 0.25)
+        );
+        const hasTwoMinWarning =
+          (currentQuarter === 2 || currentQuarter === 4) &&
+          timeRemaining > 120 &&
+          timeRemaining <= 180;
+
+        document.getElementById('plays').textContent = expectedPlays;
+        document.getElementById('stoppages').textContent = stoppages;
+        document.getElementById('commercials').textContent = Math.floor(
+          expectedPlays * 0.1
+        );
+        document.getElementById('warning').textContent = hasTwoMinWarning
+          ? 'Yes'
+          : 'No';
+
+        const confidence = timeRemaining < 120 ? 60 : 75;
+        document.getElementById('confidence').textContent = confidence + '%';
+      }
+
+      function calculateRealTime(timeRemaining, quarter, scoreDiff, timeouts) {
+        const isEndOfHalf =
+          (quarter === 2 || quarter === 4) && timeRemaining <= 120;
+        const isHurryUp = scoreDiff < -3 && timeRemaining < 300;
+        const isRunningClock = scoreDiff > 8 && timeRemaining < 300;
+
+        // Calculate expected plays
+        let avgTimePerPlay;
+        if (isHurryUp) {
+          avgTimePerPlay = 15;
+        } else if (isRunningClock) {
+          avgTimePerPlay = 35;
+        } else {
+          avgTimePerPlay = 25;
+        }
+
+        const expectedPlays = Math.ceil(timeRemaining / avgTimePerPlay);
+
+        // Clock stoppages
+        let stoppageProbability = 0.25;
+        if (isEndOfHalf) stoppageProbability = 0.45;
+        else if (scoreDiff < -7) stoppageProbability = 0.35;
+        else if (scoreDiff > 7) stoppageProbability = 0.15;
+
+        const clockStoppages = Math.floor(expectedPlays * stoppageProbability);
+
+        // Play clock time
+        const avgPlayClockTime = isHurryUp ? 10 : isRunningClock ? 38 : 25;
+        const playClockTime = (expectedPlays * avgPlayClockTime) / 60;
+
+        // Timeouts
+        const timeoutsUsed =
+          isEndOfHalf && scoreDiff < 0 ? Math.min(timeouts, 2) : 0;
+        const timeoutTime = (timeoutsUsed * 90) / 60;
+
+        // Two-minute warning
+        const hasTwoMinWarning =
+          (quarter === 2 || quarter === 4) &&
+          timeRemaining > 120 &&
+          timeRemaining <= 180;
+        const twoMinuteWarningTime = hasTwoMinWarning ? 2 : 0;
+
+        // Commercial breaks
+        const commercialBreaks = Math.floor(expectedPlays * 0.1);
+        const commercialTime = (commercialBreaks * 120) / 60;
+
+        // Total calculation
+        const totalMinutes =
+          (expectedPlays * 4) / 60 + // play duration
+          playClockTime +
+          timeoutTime +
+          twoMinuteWarningTime +
+          commercialTime +
+          (clockStoppages * 5) / 60;
+
+        return totalMinutes;
+      }
+
+      // Initial calculation
+      calculate();
+    </script>
+  </body>
+</html>
